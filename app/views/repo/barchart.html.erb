@@ -1,0 +1,40 @@
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+  <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+</head>
+<body style="margin:10px;">
+<div id="chartContainer" style="height: 300px; width: 100%;"></div>
+<script>
+window.onload = function () {
+    var dataPoint=[];
+    <% @bar_data.each do |bar| %>
+        dataPoint.push({y: <%= bar[:repo_stars] %>, label: '<%= bar[:repo_name]%>'})
+    <% end %>
+    console.log(dataPoint);
+    var chart = new CanvasJS.Chart("chartContainer", {
+        animationEnabled: true,
+        theme: "light2", // "light1", "light2", "dark1", "dark2"
+        title:{
+            text: "Top 10 Repos Data"
+        },
+        axisY: {
+            title: "Stars"
+        },
+        data: [{        
+            type: "column",  
+            showInLegend: true, 
+            legendMarkerColor: "grey",
+            legendText: "Repo Names",
+            dataPoints: dataPoint
+        }]
+    });
+    chart.render();
+    
+    
+}
+</script>
+</body>

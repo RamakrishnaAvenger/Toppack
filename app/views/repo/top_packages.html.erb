@@ -1,0 +1,48 @@
+<html ng-app="packageApp">
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+</head>
+<body ng-controller="packageController" style="margin-left:10px;">
+    <br><br>
+    Enter Search Query:
+    <br>
+    <input type="text" ng-model="title" ng-change="change()">
+    <br><br>
+    <div id="top">
+    <% @title_data.each do |title| %>
+        <li>
+            <%= title[:package_name] %>
+        </li>
+        <br><br>
+      <% end %>
+    <br><br>
+    </div>
+    <% @top_10_packages_data.each do |package| %>
+        <li>
+            <%= package[0] %>&nbsp;&nbsp;
+            <%= package[1] %>
+        </li>
+        <br><br>
+      <% end %>
+    <script>
+      var packageApp = angular.module('packageApp', []);
+      packageApp.controller('packageController', function packageController($scope,$http) {
+        $scope.titles=[];
+        $scope.change=function(){
+            var posting_data={"query":$scope.title}
+            $http.post('/top_packages',posting_data).then(function(response){
+                console.log(response.data);
+                console.log(response.data.indexOf('<div id="top">'));
+                console.log(response.data.indexOf('</div>'));
+                var replace_with=response.data.slice(response.data.indexOf('<div id="top">')+14,response.data.indexOf('</div>'));
+                $("#top").html(replace_with);
+            });
+            
+        }
+        
+      });
+    </script>
+</body>

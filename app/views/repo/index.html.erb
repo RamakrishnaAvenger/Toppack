@@ -1,0 +1,96 @@
+<html ng-app="repoApp">
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+</head>
+<body ng-controller="repoController" style="margin-left:10px;">
+    <h2>Top Pack</h2>
+    <input type="text" ng-model="query">
+    <br><br>
+    <button type="button" class="btn btn-default" ng-click="getData()">Search Repository</button>
+
+    <br>
+    <br>
+    <p ng-if="refresh_message.length>0">{{refresh_message}}</p>
+    <br>
+    <ul ng-if="repos_data.length>0" ng-repeat="repo_data in repos_data track by $index">
+        <li ng-Style="{'color': (importedPacks.indexOf($index)!=-1) ? 'orange' : 'black'}">
+         <p>{{ repo_data['name'] }}</p>
+         <p>Stars: {{ repo_data['forks_count'] }}</p>
+         <p>Forks: {{ repo_data['stargazers_count'] }}</p>
+         <p ng-if="indexes.indexOf($index)!=-1" style="color:red;">This project does not contain a package.json file</p>
+        <button type="button" class="btn btn-primary" ng-click="getPackageData(repo_data,$index)">Import</button>
+        </li>
+        <br><br>
+    </ul>
+  
+  <script>
+  var repoApp = angular.module('repoApp', []);
+
+  repoApp.controller('repoController', function repoController($scope,$http) {
+    $scope.indexes=[];
+    $scope.importedPacks=[];
+    $scope.queries=[];
+    $scope.refresh_message='';
+    function refreshArray(){
+        $scope.queries.shift();
+        console.log($scope.queries);
+    }
+    $scope.getData =function(){
+        $scope.indexes=[];
+        $scope.importedPacks=[];
+        if($scope.queries.length>0){
+            console.log('inside et interval');
+            setInterval(refreshArray,60000);
+        }
+        if($scope.queries.indexOf($scope.query)==-1){
+            console.log("inside",$scope.query);
+            $http.get("https://api.github.com/search/repositories?q="+$scope.query+"&sort=stars&order=desc")
+                .then(function(response) {
+                $scope.repos_data = response.data.items;
+                $scope.queries.push($scope.query);
+                console.log($scope.queries);
+                $scope.refresh_message='';
+            });
+        }else{
+            $scope.refresh_message="can't make an api call with same query within one minute";
+            console.log($scope.queries);
+        }
+    }
+    $scope.getPackageData = function(repo_data,index){
+        $scope.importedPacks.push(index);
+        try{
+            $http.get("https://api.github.com/repos/"+repo_data["owner"]["login"]+'/'+repo_data["name"]+'/contents/package.json')
+            .then(function(response){
+                $scope.packagedata=response.data;
+                $scope.content=JSON.parse(atob($scope.packagedata['content']));
+                console.log($scope.content);
+                $scope.devDependencies=Object.keys($scope.content.devDependencies);
+                $scope.dependencies=[]
+                if('dependencies' in $scope.content){
+                    $scope.dependencies=Object.keys($scope.content.dependencies);   
+                    console.log($scope.dependencies);
+                }
+                var posting_data={'dependencies':$scope.dependencies,'devDependencies':$scope.devDependencies,'repo_name':repo_data['name'],'repo_stars':repo_data['stargazers_count'],'repo_forks':repo_data['forks_count'],'query':$scope.query};
+                console.log(posting_data);
+                $http.post('/save_data',posting_data).then(function(response){
+                    console.log(response.data);
+                })
+
+            })
+            .catch(function(response){
+                console.log(response.data);
+                $scope.indexes.push(index);
+            })
+        }
+        catch(err){
+            
+        }
+
+    }   
+  });
+  </script>
+</body>
+</html>
